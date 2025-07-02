@@ -11,13 +11,13 @@ if "winner" not in st.session_state:
 if "gameRunning" not in st.session_state:
     st.session_state.gameRunning = True
 
-# Win check functions
+# Game logic functions
 def check_winner():
     b = st.session_state.board
     lines = [
-        [0,1,2],[3,4,5],[6,7,8], # horizontal
-        [0,3,6],[1,4,7],[2,5,8], # vertical
-        [0,4,8],[2,4,6]          # diagonal
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Horizontal
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Vertical
+        [0, 4, 8], [2, 4, 6]              # Diagonal
     ]
     for line in lines:
         a, b1, c = line
@@ -35,19 +35,18 @@ def switch_player():
 
 def computer_move():
     if st.session_state.gameRunning and st.session_state.currentPlayer == "O":
-        while True:
-            pos = random.randint(0, 8)
-            if st.session_state.board[pos] == "-":
-                st.session_state.board[pos] = "O"
-                break
-        check_winner()
-        check_tie()
-        if st.session_state.gameRunning:
-            switch_player()
+        empty_positions = [i for i, val in enumerate(st.session_state.board) if val == "-"]
+        if empty_positions:
+            pos = random.choice(empty_positions)
+            st.session_state.board[pos] = "O"
+            check_winner()
+            check_tie()
+            if st.session_state.gameRunning:
+                switch_player()
 
-def handle_click(i):
-    if st.session_state.gameRunning and st.session_state.board[i] == "-" and st.session_state.currentPlayer == "X":
-        st.session_state.board[i] = "X"
+def player_move(index):
+    if st.session_state.gameRunning and st.session_state.board[index] == "-" and st.session_state.currentPlayer == "X":
+        st.session_state.board[index] = "X"
         check_winner()
         check_tie()
         if st.session_state.gameRunning:
@@ -60,18 +59,27 @@ def reset_game():
     st.session_state.winner = None
     st.session_state.gameRunning = True
 
-# UI layout
+# Title
 st.title("🎮 Tic Tac Toe - Player vs Computer")
 
+# Board layout
 cols = st.columns(3)
 for i in range(9):
     with cols[i % 3]:
-        if st.button(st.session_state.board[i] if st.session_state.board[i] != "-" else " ", key=i):
-            handle_click(i)
+        # Display either "X", "O", or show a button
+        cell = st.session_state.board[i]
+        if cell == "-":
+            if st.button(" ", key=i):
+                player_move(i)
+                st.rerun()  # 🔁 Ensures UI updates instantly after move
+        else:
+            st.markdown(f"<h2 style='text-align: center'>{cell}</h2>", unsafe_allow_html=True)
 
+# Game status
 if st.session_state.winner:
     st.success(f"🎉 The winner is {st.session_state.winner}!")
 elif not st.session_state.gameRunning:
     st.info("It's a tie!")
 
+# Reset button
 st.button("🔁 Restart Game", on_click=reset_game)
