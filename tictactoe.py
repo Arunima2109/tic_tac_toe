@@ -10,14 +10,16 @@ if "winner" not in st.session_state:
     st.session_state.winner = None
 if "gameRunning" not in st.session_state:
     st.session_state.gameRunning = True
+if "tie" not in st.session_state:
+    st.session_state.tie = False
 
 # --- Game Logic ---
 def check_winner():
     b = st.session_state.board
     lines = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # columns
-        [0, 4, 8], [2, 4, 6]              # diagonals
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
     ]
     for a, b1, c in lines:
         if b[a] == b[b1] == b[c] != "-":
@@ -27,6 +29,7 @@ def check_winner():
 
 def check_tie():
     if "-" not in st.session_state.board and st.session_state.winner is None:
+        st.session_state.tie = True
         st.session_state.gameRunning = False
 
 def switch_player():
@@ -57,29 +60,38 @@ def reset_game():
     st.session_state.currentPlayer = "X"
     st.session_state.winner = None
     st.session_state.gameRunning = True
+    st.session_state.tie = False
 
 # --- Page Setup ---
 st.set_page_config(page_title="Tic Tac Toe", layout="centered")
 
-# --- Custom Background ---
+# --- Custom CSS for Background and Result Banner ---
 st.markdown("""
     <style>
     .stApp {
         background: linear-gradient(to right, #dbeafe, #f0f9ff);
         font-family: 'Segoe UI', sans-serif;
+        position: relative;
     }
     .title {
         text-align: center;
         font-size: 36px;
-        margin-top: -30px;
-        margin-bottom: 10px;
         color: #0f172a;
     }
-    .status {
+    .overlay {
+        position: fixed;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 30px 60px;
+        font-size: 32px;
+        font-weight: bold;
+        border-radius: 10px;
+        z-index: 9999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         text-align: center;
-        font-size: 20px;
-        margin-bottom: 20px;
-        color: #334155;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -87,25 +99,15 @@ st.markdown("""
 # --- Title ---
 st.markdown("<h1 class='title'>🎮 Tic Tac Toe - Player vs Computer</h1>", unsafe_allow_html=True)
 
-# --- Rules Button ---
-with st.expander("📘 Rules of the Game", expanded=False):
+# --- Rules ---
+with st.expander("📘 Rules of the Game"):
     st.markdown("""
     - The game is played on a 3×3 grid.
     - You are **X** and the computer is **O**.
-    - Players take turns placing their marks in empty squares.
-    - The first player to get 3 of their marks in a row (vertically, horizontally, or diagonally) wins!
-    - If all 9 squares are filled and no player has 3 in a row, the game is a tie.
+    - Take turns placing marks in empty squares.
+    - First to get 3 in a row wins.
+    - If all 9 are filled and no winner, it's a tie.
     """)
-
-# --- Game Status ---
-if st.session_state.winner:
-    status_msg = f"🏆 Winner: {st.session_state.winner}"
-elif not st.session_state.gameRunning:
-    status_msg = "🤝 It's a tie!"
-else:
-    status_msg = f"🎯 Turn: {st.session_state.currentPlayer}"
-
-st.button(f"🧭 Status: {status_msg}", disabled=True)
 
 # --- 3x3 Grid Board ---
 for row in range(3):
@@ -124,5 +126,12 @@ for row in range(3):
                     unsafe_allow_html=True
                 )
 
+# --- Overlay Result Banner (Win or Tie) ---
+if st.session_state.winner:
+    st.markdown(f"<div class='overlay'>🏆 Winner: {st.session_state.winner}!</div>", unsafe_allow_html=True)
+elif st.session_state.tie:
+    st.markdown("<div class='overlay'>🤝 It's a tie!</div>", unsafe_allow_html=True)
+
 # --- Restart Button ---
+st.markdown("###")
 st.button("🔁 Restart Game", on_click=reset_game)
