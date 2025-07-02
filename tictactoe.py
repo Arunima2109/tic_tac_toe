@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 
-# Initialize game state
+# --- Game State Initialization ---
 if "board" not in st.session_state:
     st.session_state.board = ["-"] * 9
 if "currentPlayer" not in st.session_state:
@@ -11,16 +11,15 @@ if "winner" not in st.session_state:
 if "gameRunning" not in st.session_state:
     st.session_state.gameRunning = True
 
-# Game logic functions
+# --- Game Logic ---
 def check_winner():
     b = st.session_state.board
     lines = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Horizontal
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Vertical
-        [0, 4, 8], [2, 4, 6]              # Diagonal
+        [0,1,2],[3,4,5],[6,7,8],  # rows
+        [0,3,6],[1,4,7],[2,5,8],  # columns
+        [0,4,8],[2,4,6]           # diagonals
     ]
-    for line in lines:
-        a, b1, c = line
+    for a, b1, c in lines:
         if st.session_state.board[a] == st.session_state.board[b1] == st.session_state.board[c] != "-":
             st.session_state.winner = st.session_state.board[a]
             st.session_state.gameRunning = False
@@ -35,18 +34,18 @@ def switch_player():
 
 def computer_move():
     if st.session_state.gameRunning and st.session_state.currentPlayer == "O":
-        empty_positions = [i for i, val in enumerate(st.session_state.board) if val == "-"]
-        if empty_positions:
-            pos = random.choice(empty_positions)
+        empty = [i for i, val in enumerate(st.session_state.board) if val == "-"]
+        if empty:
+            pos = random.choice(empty)
             st.session_state.board[pos] = "O"
             check_winner()
             check_tie()
             if st.session_state.gameRunning:
                 switch_player()
 
-def player_move(index):
-    if st.session_state.gameRunning and st.session_state.board[index] == "-" and st.session_state.currentPlayer == "X":
-        st.session_state.board[index] = "X"
+def player_move(i):
+    if st.session_state.board[i] == "-" and st.session_state.gameRunning and st.session_state.currentPlayer == "X":
+        st.session_state.board[i] = "X"
         check_winner()
         check_tie()
         if st.session_state.gameRunning:
@@ -59,27 +58,33 @@ def reset_game():
     st.session_state.winner = None
     st.session_state.gameRunning = True
 
-# Title
+# --- UI Layout ---
+st.set_page_config(page_title="Tic Tac Toe", layout="centered")
 st.title("🎮 Tic Tac Toe - Player vs Computer")
+st.markdown("#### Click a square to place your ❌")
 
-# Board layout
-cols = st.columns(3)
-for i in range(9):
-    with cols[i % 3]:
-        # Display either "X", "O", or show a button
+# Create 3x3 grid using rows
+for row in range(3):
+    cols = st.columns(3)
+    for col in range(3):
+        i = row * 3 + col
         cell = st.session_state.board[i]
-        if cell == "-":
-            if st.button(" ", key=i):
-                player_move(i)
-                st.rerun()  # 🔁 Ensures UI updates instantly after move
-        else:
-            st.markdown(f"<h2 style='text-align: center'>{cell}</h2>", unsafe_allow_html=True)
+        with cols[col]:
+            if cell == "-":
+                if st.button(" ", key=i, help=f"Click to place at {i+1}", use_container_width=True):
+                    player_move(i)
+                    st.rerun()
+            else:
+                st.markdown(
+                    f"<div style='text-align: center; font-size: 36px; font-weight: bold;'>{cell}</div>",
+                    unsafe_allow_html=True
+                )
 
-# Game status
+# Show result
 if st.session_state.winner:
-    st.success(f"🎉 The winner is {st.session_state.winner}!")
+    st.success(f"🎉 Winner: {st.session_state.winner}!")
 elif not st.session_state.gameRunning:
     st.info("It's a tie!")
 
-# Reset button
+# Restart Button
 st.button("🔁 Restart Game", on_click=reset_game)
